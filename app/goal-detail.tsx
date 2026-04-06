@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, FlatList, Pressable, StyleSheet, Text, View, Platform } from "react-native";
 import { useGoalStore } from "../store/goalStore";
+
 
 export default function GoalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -24,19 +25,28 @@ export default function GoalDetailScreen() {
 
   const remaining = goal.target_amount - goal.current_amount;
 
-  const handleDelete = () => {
-    Alert.alert("Delete Goal", "Are you sure you want to delete this goal?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => {
-          deleteGoal(goal.id);
-          router.replace("/home");
-        },
+const handleDelete = () => {
+  if (Platform.OS === "web") {
+    const confirmed = window.confirm("Are you sure you want to delete this goal?");
+    if (!confirmed) return;
+
+    deleteGoal(goal.id);
+    router.replace("/home");
+    return;
+  }
+
+  Alert.alert("Delete Goal", "Are you sure you want to delete this goal?", [
+    { text: "Cancel", style: "cancel" },
+    {
+      text: "Delete",
+      style: "destructive",
+      onPress: () => {
+        deleteGoal(goal.id);
+        router.replace("/home");
       },
-    ]);
-  };
+    },
+  ]);
+};
 
   return (
     <View style={styles.container}>
