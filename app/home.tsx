@@ -1,18 +1,55 @@
 import { router } from "expo-router";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import GoalCard from "../components/GoalCard";
 import { useGoalStore } from "../store/goalStore";
 import { supabase } from "../lib/supabase";
+import { loadUserAppData } from "../lib/appData";
 
 export default function HomeScreen() {
   const goals = useGoalStore((state) => state.goals);
   const monthlyRevenue = useGoalStore((state) => state.monthlyRevenue);
   const monthlyExpense = useGoalStore((state) => state.monthlyExpense);
   const runMonthlySettlement = useGoalStore((state) => state.runMonthlySettlement);
+  const setAllData = useGoalStore((state) => state.setAllData);
+
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    runMonthlySettlement();
+    const init = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          router.replace("/login");
+          return;
+        }
+
+        const { profile, goals } = await loadUserAppData();
+
+        setAllData({
+          goals: goals.map((goal: any) => ({
+            ...goal,
+            id: String(goal.id),
+            transactions: [],
+            lastCalculatedAt:
+              goal.last_calculated_at || new Date().toISOString(),
+          })),
+          monthlyRevenue: Number(profile.monthly_revenue ?? 0),
+          monthlyExpense: Number(profile.monthly_expense ?? 0),
+        });
+
+        runMonthlySettlement();
+      } catch (err) {
+        alert("Failed to load data: " + String(err));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    init();
   }, []);
 
   const monthlySaving = monthlyRevenue - monthlyExpense;
@@ -75,6 +112,14 @@ export default function HomeScreen() {
 
     router.replace("/login");
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingBox}>
+        <Text style={styles.loadingText}>Loading your data...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -230,6 +275,16 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingBox: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8fafc",
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#475569",
+  },
   container: {
     flex: 1,
     backgroundColor: "#f8fafc",

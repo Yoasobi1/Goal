@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { useGoalStore } from "../store/goalStore";
+import { supabase } from "../lib/supabase";
 
 export default function BudgetSettingsScreen() {
   const monthlyRevenue = useGoalStore((state) => state.monthlyRevenue);
@@ -18,9 +19,31 @@ export default function BudgetSettingsScreen() {
   const [revenue, setRevenue] = useState(String(monthlyRevenue || ""));
   const [expense, setExpense] = useState(String(monthlyExpense || ""));
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!revenue || !expense) {
       Alert.alert("Error", "Please fill in revenue and expense.");
+      return;
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      Alert.alert("Error", "No logged in user.");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        monthly_revenue: Number(revenue),
+        monthly_expense: Number(expense),
+      })
+      .eq("id", user.id);
+
+    if (error) {
+      Alert.alert("Save failed", error.message);
       return;
     }
 

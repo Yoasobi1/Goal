@@ -6,6 +6,12 @@ type GoalStore = {
   monthlyRevenue: number;
   monthlyExpense: number;
   setBudget: (revenue: number, expense: number) => void;
+  setGoals: (goals: Goal[]) => void;
+  setAllData: (data: {
+    goals: Goal[];
+    monthlyRevenue: number;
+    monthlyExpense: number;
+  }) => void;
   addGoal: (goal: Omit<Goal, "id" | "created_at" | "transactions" | "lastCalculatedAt">) => void;
   addDeposit: (goalId: string, amount: number, note?: string) => void;
   deleteGoal: (goalId: string) => void;
@@ -39,6 +45,15 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
     set({
       monthlyRevenue: revenue,
       monthlyExpense: expense,
+    }),
+
+  setGoals: (goals) => set({ goals }),
+
+  setAllData: ({ goals, monthlyRevenue, monthlyExpense }) =>
+    set({
+      goals,
+      monthlyRevenue,
+      monthlyExpense,
     }),
 
   addGoal: (goal) =>

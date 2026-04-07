@@ -1,4 +1,4 @@
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
@@ -42,6 +42,10 @@ export default function LoginScreen() {
     }
   };
 
+  const goToRegister = () => {
+    router.push("/register");
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
@@ -73,11 +77,9 @@ export default function LoginScreen() {
         </Text>
       </Pressable>
 
-      <Link href="/register" asChild>
-        <Pressable style={styles.linkButton}>
-          <Text style={styles.linkText}>Don't have an account? Register</Text>
-        </Pressable>
-      </Link>
+      <Pressable style={styles.linkButton} onPress={goToRegister}>
+        <Text style={styles.linkText}>Don't have an account? Register</Text>
+      </Pressable>
     </View>
   );
 }

@@ -6,33 +6,45 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput
+  TextInput,
 } from "react-native";
-import { useGoalStore } from "../store/goalStore";
+import { supabase } from "../lib/supabase";
 
 export default function AddGoalScreen() {
-  const addGoal = useGoalStore((state) => state.addGoal);
-
   const [name, setName] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
   const [currentAmount, setCurrentAmount] = useState("");
   const [deadline, setDeadline] = useState("");
   const [note, setNote] = useState("");
 
-
-  const handleSave = () => {
-    if (!name || !targetAmount || !currentAmount || !deadline){
+  const handleSave = async () => {
+    if (!name || !targetAmount || !currentAmount || !deadline) {
       Alert.alert("Error", "Please fill in all required fields.");
       return;
     }
 
-    addGoal({
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      Alert.alert("Error", "No logged in user.");
+      return;
+    }
+
+    const { error } = await supabase.from("goals").insert({
+      user_id: user.id,
       name,
       target_amount: Number(targetAmount),
       current_amount: Number(currentAmount),
       deadline,
       note,
     });
+
+    if (error) {
+      Alert.alert("Save failed", error.message);
+      return;
+    }
 
     router.replace("/home");
   };
@@ -76,9 +88,6 @@ export default function AddGoalScreen() {
         onChangeText={setNote}
         multiline
       />
-
-
-
 
       <Pressable style={styles.button} onPress={handleSave}>
         <Text style={styles.buttonText}>Save Goal</Text>
