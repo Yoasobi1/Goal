@@ -1,12 +1,21 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { Alert, FlatList, Pressable, StyleSheet, Text, View, Platform } from "react-native";
+import {
+  FlatList,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  Alert,
+} from "react-native";
 import { useGoalStore } from "../store/goalStore";
-
 
 export default function GoalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const goals = useGoalStore((state) => state.goals);
   const deleteGoal = useGoalStore((state) => state.deleteGoal);
+  const monthlyRevenue = useGoalStore((state) => state.monthlyRevenue);
+  const monthlyExpense = useGoalStore((state) => state.monthlyExpense);
 
   const goal = goals.find((item) => item.id === id);
 
@@ -24,29 +33,34 @@ export default function GoalDetailScreen() {
   );
 
   const remaining = goal.target_amount - goal.current_amount;
+  const monthlySaving = monthlyRevenue - monthlyExpense;
+  const estimatedMonths =
+    monthlySaving > 0 ? Math.ceil(remaining / monthlySaving) : null;
 
-const handleDelete = () => {
-  if (Platform.OS === "web") {
-    const confirmed = window.confirm("Are you sure you want to delete this goal?");
-    if (!confirmed) return;
+  const handleDelete = () => {
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm(
+        "Are you sure you want to delete this goal?"
+      );
+      if (!confirmed) return;
 
-    deleteGoal(goal.id);
-    router.replace("/home");
-    return;
-  }
+      deleteGoal(goal.id);
+      router.replace("/home");
+      return;
+    }
 
-  Alert.alert("Delete Goal", "Are you sure you want to delete this goal?", [
-    { text: "Cancel", style: "cancel" },
-    {
-      text: "Delete",
-      style: "destructive",
-      onPress: () => {
-        deleteGoal(goal.id);
-        router.replace("/home");
+    Alert.alert("Delete Goal", "Are you sure you want to delete this goal?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          deleteGoal(goal.id);
+          router.replace("/home");
+        },
       },
-    },
-  ]);
-};
+    ]);
+  };
 
   return (
     <View style={styles.container}>
@@ -64,6 +78,19 @@ const handleDelete = () => {
         <Text style={styles.percent}>{percent}% completed</Text>
 
         {goal.note ? <Text style={styles.note}>Note: {goal.note}</Text> : null}
+      </View>
+
+      <View style={styles.budgetCard}>
+        <Text style={styles.sectionTitle}>Budget Estimate</Text>
+        <Text style={styles.text}>Monthly Revenue: ${monthlyRevenue}</Text>
+        <Text style={styles.text}>Monthly Expense: ${monthlyExpense}</Text>
+        <Text style={styles.text}>Net Saving: ${monthlySaving}</Text>
+        <Text style={styles.estimateText}>
+          Estimated Time:{" "}
+          {estimatedMonths !== null
+            ? `${estimatedMonths} month(s)`
+            : "Not enough savings rate"}
+        </Text>
       </View>
 
       <Pressable
@@ -93,10 +120,14 @@ const handleDelete = () => {
             <Text style={styles.transactionDate}>
               {new Date(item.created_at).toLocaleString()}
             </Text>
-            {item.note ? <Text style={styles.transactionNote}>{item.note}</Text> : null}
+            {item.note ? (
+              <Text style={styles.transactionNote}>{item.note}</Text>
+            ) : null}
           </View>
         )}
-        ListEmptyComponent={<Text style={styles.emptyText}>No transactions yet.</Text>}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>No transactions yet.</Text>
+        }
         contentContainerStyle={{ paddingBottom: 20 }}
       />
     </View>
@@ -115,6 +146,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   card: {
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 16,
+  },
+  budgetCard: {
     backgroundColor: "#fff",
     padding: 16,
     borderRadius: 14,
@@ -149,6 +186,12 @@ const styles = StyleSheet.create({
   note: {
     marginTop: 10,
     color: "#555",
+  },
+  estimateText: {
+    marginTop: 8,
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#16a34a",
   },
   primaryButton: {
     backgroundColor: "#4f46e5",

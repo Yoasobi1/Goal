@@ -3,6 +3,9 @@ import { Goal } from "../types/goal";
 
 type GoalStore = {
   goals: Goal[];
+  monthlyRevenue: number;
+  monthlyExpense: number;
+  setBudget: (revenue: number, expense: number) => void;
   addGoal: (goal: Omit<Goal, "id" | "created_at" | "transactions">) => void;
   addDeposit: (goalId: string, amount: number, note?: string) => void;
   deleteGoal: (goalId: string) => void;
@@ -10,6 +13,14 @@ type GoalStore = {
 
 export const useGoalStore = create<GoalStore>((set) => ({
   goals: [],
+  monthlyRevenue: 0,
+  monthlyExpense: 0,
+
+  setBudget: (revenue, expense) =>
+    set(() => ({
+      monthlyRevenue: revenue,
+      monthlyExpense: expense,
+    })),
 
   addGoal: (goal) =>
     set((state) => ({

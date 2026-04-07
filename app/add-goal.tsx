@@ -19,8 +19,9 @@ export default function AddGoalScreen() {
   const [deadline, setDeadline] = useState("");
   const [note, setNote] = useState("");
 
+
   const handleSave = () => {
-    if (!name || !targetAmount || !currentAmount || !deadline) {
+    if (!name || !targetAmount || !currentAmount || !deadline){
       Alert.alert("Error", "Please fill in all required fields.");
       return;
     }
@@ -75,6 +76,9 @@ export default function AddGoalScreen() {
         onChangeText={setNote}
         multiline
       />
+
+
+
 
       <Pressable style={styles.button} onPress={handleSave}>
         <Text style={styles.buttonText}>Save Goal</Text>

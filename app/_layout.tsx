@@ -9,6 +9,10 @@ export default function RootLayout() {
       <Stack.Screen name="add-goal" options={{ title: "Add Goal" }} />
       <Stack.Screen name="goal-detail" options={{ title: "Goal Detail" }} />
       <Stack.Screen name="add-deposit" options={{ title: "Add Deposit" }} />
+      <Stack.Screen
+        name="budget-settings"
+        options={{ title: "Budget Settings" }}
+      />
     </Stack>
   );
 }

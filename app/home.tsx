@@ -5,25 +5,37 @@ import { useGoalStore } from "../store/goalStore";
 
 export default function HomeScreen() {
   const goals = useGoalStore((state) => state.goals);
+  const monthlyRevenue = useGoalStore((state) => state.monthlyRevenue);
+  const monthlyExpense = useGoalStore((state) => state.monthlyExpense);
 
   const totalSaved = goals.reduce((sum, goal) => sum + goal.current_amount, 0);
   const totalTarget = goals.reduce((sum, goal) => sum + goal.target_amount, 0);
+  const monthlySaving = monthlyRevenue - monthlyExpense;
 
   return (
     <View style={styles.container}>
       <View style={styles.headerCard}>
-        <Text style={styles.smallTitle}>Welcome back</Text>
-        <Text style={styles.mainTitle}>My Saving Goals</Text>
-        <Text style={styles.subTitle}>
-          Track your goals and grow your savings step by step.
+        <Text style={styles.greeting}>Welcome back</Text>
+        <Text style={styles.title}>Savings Dashboard</Text>
+        <Text style={styles.subtitle}>
+          Stay on track and see how close you are to each goal.
         </Text>
 
-        <Pressable
-          style={styles.addButton}
-          onPress={() => router.push("/add-goal")}
-        >
-          <Text style={styles.addButtonText}>+ Add New Goal</Text>
-        </Pressable>
+        <View style={styles.headerButtons}>
+          <Pressable
+            style={styles.primaryButton}
+            onPress={() => router.push("/add-goal")}
+          >
+            <Text style={styles.primaryButtonText}>+ Add Goal</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.secondaryButton}
+            onPress={() => router.push("/budget-settings")}
+          >
+            <Text style={styles.secondaryButtonText}>Budget</Text>
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.statsRow}>
@@ -43,6 +55,19 @@ export default function HomeScreen() {
         </View>
       </View>
 
+      <View style={styles.budgetCard}>
+        <View>
+          <Text style={styles.budgetTitle}>Monthly Budget</Text>
+          <Text style={styles.budgetText}>Revenue: ${monthlyRevenue}</Text>
+          <Text style={styles.budgetText}>Expense: ${monthlyExpense}</Text>
+        </View>
+
+        <View style={styles.netBadge}>
+          <Text style={styles.netBadgeLabel}>Net Saving</Text>
+          <Text style={styles.netBadgeValue}>${monthlySaving}</Text>
+        </View>
+      </View>
+
       <Text style={styles.sectionTitle}>Your Goals</Text>
 
       {goals.length === 0 ? (
@@ -50,7 +75,7 @@ export default function HomeScreen() {
           <Text style={styles.emptyEmoji}>🎯</Text>
           <Text style={styles.emptyTitle}>No saving goals yet</Text>
           <Text style={styles.emptyText}>
-            Start by creating your first saving goal.
+            Create your first goal and start tracking your progress.
           </Text>
 
           <Pressable
@@ -67,6 +92,7 @@ export default function HomeScreen() {
           renderItem={({ item }) => (
             <GoalCard
               goal={item}
+              monthlySaving={monthlySaving}
               onPress={() =>
                 router.push({
                   pathname: "/goal-detail",
@@ -92,43 +118,59 @@ const styles = StyleSheet.create({
   },
   headerCard: {
     backgroundColor: "#4f46e5",
-    borderRadius: 24,
+    borderRadius: 26,
     padding: 20,
     marginBottom: 18,
   },
-  smallTitle: {
+  greeting: {
     color: "#c7d2fe",
     fontSize: 14,
     marginBottom: 6,
   },
-  mainTitle: {
+  title: {
     color: "#fff",
     fontSize: 28,
     fontWeight: "800",
     marginBottom: 8,
   },
-  subTitle: {
+  subtitle: {
     color: "#e0e7ff",
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 16,
   },
-  addButton: {
-    alignSelf: "flex-start",
+  headerButtons: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  primaryButton: {
     backgroundColor: "#fff",
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 14,
   },
-  addButtonText: {
+  primaryButtonText: {
     color: "#4f46e5",
-    fontWeight: "700",
+    fontWeight: "800",
+    fontSize: 15,
+  },
+  secondaryButton: {
+    backgroundColor: "#6366f1",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#c7d2fe",
+  },
+  secondaryButtonText: {
+    color: "#fff",
+    fontWeight: "800",
     fontSize: 15,
   },
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: 16,
   },
   statCard: {
     flex: 1,
@@ -152,6 +194,43 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "800",
     color: "#0f172a",
+  },
+  budgetCard: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 18,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  budgetTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#0f172a",
+    marginBottom: 8,
+  },
+  budgetText: {
+    fontSize: 14,
+    color: "#475569",
+    marginBottom: 4,
+  },
+  netBadge: {
+    backgroundColor: "#ecfdf5",
+    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignItems: "center",
+  },
+  netBadgeLabel: {
+    fontSize: 12,
+    color: "#15803d",
+    marginBottom: 4,
+  },
+  netBadgeValue: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#16a34a",
   },
   sectionTitle: {
     fontSize: 20,
