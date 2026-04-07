@@ -3,6 +3,7 @@ import { useEffect, useMemo } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import GoalCard from "../components/GoalCard";
 import { useGoalStore } from "../store/goalStore";
+import { supabase } from "../lib/supabase";
 
 export default function HomeScreen() {
   const goals = useGoalStore((state) => state.goals);
@@ -64,14 +65,33 @@ export default function HomeScreen() {
     (goal) => goal.current_amount >= goal.target_amount
   ).length;
 
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      alert("Logout failed: " + error.message);
+      return;
+    }
+
+    router.replace("/login");
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.headerCard}>
-        <Text style={styles.greeting}>Welcome back</Text>
-        <Text style={styles.title}>Savings Dashboard</Text>
-        <Text style={styles.subtitle}>
-          Track your goals, monitor your budget, and stay on top of your progress.
-        </Text>
+        <View style={styles.headerTopRow}>
+          <View style={styles.headerTextWrap}>
+            <Text style={styles.greeting}>Welcome back</Text>
+            <Text style={styles.title}>Savings Dashboard</Text>
+            <Text style={styles.subtitle}>
+              Track your goals, budget, and estimated completion time.
+            </Text>
+          </View>
+
+          <Pressable style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.logoutButtonText}>Logout</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.headerButtons}>
           <Pressable
@@ -85,7 +105,7 @@ export default function HomeScreen() {
             style={styles.secondaryButton}
             onPress={() => router.push("/budget-settings")}
           >
-            <Text style={styles.secondaryButtonText}>Budget</Text>
+            <Text style={styles.secondaryButtonText}>Budget Settings</Text>
           </Pressable>
         </View>
       </View>
@@ -108,7 +128,7 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.budgetCard}>
-        <View>
+        <View style={styles.budgetLeft}>
           <Text style={styles.budgetTitle}>Monthly Budget</Text>
           <Text style={styles.budgetText}>Revenue: ${monthlyRevenue}</Text>
           <Text style={styles.budgetText}>Expense: ${monthlyExpense}</Text>
@@ -148,7 +168,7 @@ export default function HomeScreen() {
           <Text style={styles.insightText}>
             {closestGoal?.estimatedMonths !== null && closestGoal
               ? `${closestGoal.estimatedMonths} month(s) left`
-              : "Set your budget to estimate"}
+              : "Set budget to estimate"}
           </Text>
         </View>
 
@@ -167,9 +187,7 @@ export default function HomeScreen() {
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Your Goals</Text>
-        <Text style={styles.sectionSubText}>
-          Total Target: ${totalTarget}
-        </Text>
+        <Text style={styles.sectionSubText}>Total Target: ${totalTarget}</Text>
       </View>
 
       {goals.length === 0 ? (
@@ -177,7 +195,7 @@ export default function HomeScreen() {
           <Text style={styles.emptyEmoji}>🎯</Text>
           <Text style={styles.emptyTitle}>No saving goals yet</Text>
           <Text style={styles.emptyText}>
-            Create your first goal and start tracking your progress.
+            Create your first goal and start tracking your savings progress.
           </Text>
 
           <Pressable
@@ -220,9 +238,19 @@ const styles = StyleSheet.create({
   },
   headerCard: {
     backgroundColor: "#4f46e5",
-    borderRadius: 26,
+    borderRadius: 28,
     padding: 20,
     marginBottom: 18,
+  },
+  headerTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 18,
+  },
+  headerTextWrap: {
+    flex: 1,
+    paddingRight: 12,
   },
   greeting: {
     color: "#c7d2fe",
@@ -239,17 +267,31 @@ const styles = StyleSheet.create({
     color: "#e0e7ff",
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: 16,
+  },
+  logoutButton: {
+    backgroundColor: "rgba(255,255,255,0.16)",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+  },
+  logoutButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 14,
   },
   headerButtons: {
     flexDirection: "row",
     gap: 10,
   },
   primaryButton: {
+    flex: 1,
     backgroundColor: "#fff",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 13,
     borderRadius: 14,
+    alignItems: "center",
   },
   primaryButtonText: {
     color: "#4f46e5",
@@ -257,12 +299,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   secondaryButton: {
+    flex: 1,
     backgroundColor: "#6366f1",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 13,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "#c7d2fe",
+    alignItems: "center",
   },
   secondaryButtonText: {
     color: "#fff",
@@ -306,6 +350,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  budgetLeft: {
+    flex: 1,
+    paddingRight: 12,
+  },
   budgetTitle: {
     fontSize: 18,
     fontWeight: "800",
@@ -318,11 +366,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   netBadge: {
-    borderRadius: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    borderRadius: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     alignItems: "center",
-    minWidth: 110,
+    minWidth: 120,
   },
   netPositive: {
     backgroundColor: "#ecfdf5",
@@ -354,6 +402,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 20,
     padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
+    elevation: 1,
   },
   insightLabel: {
     fontSize: 12,
@@ -373,6 +425,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     marginBottom: 12,
+    paddingHorizontal: 2,
   },
   sectionTitle: {
     fontSize: 20,

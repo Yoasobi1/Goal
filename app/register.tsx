@@ -10,12 +10,12 @@ import {
 } from "react-native";
 import { supabase } from "../lib/supabase";
 
-export default function LoginScreen() {
+export default function RegisterScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
+  const handleRegister = async () => {
     if (!email || !password) {
       Alert.alert("Error", "Please enter email and password.");
       return;
@@ -24,19 +24,26 @@ export default function LoginScreen() {
     try {
       setLoading(true);
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
       });
 
       if (error) {
-        Alert.alert("Login failed", error.message);
+        Alert.alert("Register failed", error.message);
         return;
       }
 
-      router.replace("/home");
+      Alert.alert(
+        "Success",
+        data.user
+          ? "Account created successfully. Please check your email if confirmation is required."
+          : "Registration completed."
+      );
+
+      router.replace("/login");
     } catch (err) {
-      Alert.alert("Login failed", String(err));
+      Alert.alert("Register failed", String(err));
     } finally {
       setLoading(false);
     }
@@ -44,8 +51,8 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
-      <Text style={styles.subtitle}>Welcome back</Text>
+      <Text style={styles.title}>Register</Text>
+      <Text style={styles.subtitle}>Create your account</Text>
 
       <TextInput
         style={styles.input}
@@ -65,17 +72,17 @@ export default function LoginScreen() {
 
       <Pressable
         style={[styles.button, loading && styles.disabledButton]}
-        onPress={handleLogin}
+        onPress={handleRegister}
         disabled={loading}
       >
         <Text style={styles.buttonText}>
-          {loading ? "Please wait..." : "Login"}
+          {loading ? "Please wait..." : "Register"}
         </Text>
       </Pressable>
 
-      <Link href="/register" asChild>
+      <Link href="/login" asChild>
         <Pressable style={styles.linkButton}>
-          <Text style={styles.linkText}>Don't have an account? Register</Text>
+          <Text style={styles.linkText}>Already have an account? Login</Text>
         </Pressable>
       </Link>
     </View>
