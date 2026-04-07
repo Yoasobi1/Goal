@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { useEffect, useMemo } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import GoalCard from "../components/GoalCard";
 import { useGoalStore } from "../store/goalStore";
@@ -7,10 +8,61 @@ export default function HomeScreen() {
   const goals = useGoalStore((state) => state.goals);
   const monthlyRevenue = useGoalStore((state) => state.monthlyRevenue);
   const monthlyExpense = useGoalStore((state) => state.monthlyExpense);
+  const runMonthlySettlement = useGoalStore((state) => state.runMonthlySettlement);
 
+  useEffect(() => {
+    runMonthlySettlement();
+  }, []);
+
+  const monthlySaving = monthlyRevenue - monthlyExpense;
   const totalSaved = goals.reduce((sum, goal) => sum + goal.current_amount, 0);
   const totalTarget = goals.reduce((sum, goal) => sum + goal.target_amount, 0);
-  const monthlySaving = monthlyRevenue - monthlyExpense;
+
+  const goalStats = useMemo(() => {
+    return goals.map((goal) => {
+      const remaining = Math.max(0, goal.target_amount - goal.current_amount);
+      const estimatedMonths =
+        monthlySaving > 0 ? Math.ceil(remaining / monthlySaving) : null;
+
+      return {
+        ...goal,
+        remaining,
+        estimatedMonths,
+      };
+    });
+  }, [goals, monthlySaving]);
+
+  const closestGoal = useMemo(() => {
+    const validGoals = goalStats.filter(
+      (goal) => goal.estimatedMonths !== null && goal.remaining > 0
+    );
+
+    if (validGoals.length === 0) return null;
+
+    return validGoals.reduce((prev, current) =>
+      (current.estimatedMonths ?? Infinity) < (prev.estimatedMonths ?? Infinity)
+        ? current
+        : prev
+    );
+  }, [goalStats]);
+
+  const atRiskGoal = useMemo(() => {
+    const validGoals = goalStats.filter(
+      (goal) => goal.estimatedMonths !== null && goal.remaining > 0
+    );
+
+    if (validGoals.length === 0) return null;
+
+    return validGoals.reduce((prev, current) =>
+      (current.estimatedMonths ?? -1) > (prev.estimatedMonths ?? -1)
+        ? current
+        : prev
+    );
+  }, [goalStats]);
+
+  const completedGoals = goals.filter(
+    (goal) => goal.current_amount >= goal.target_amount
+  ).length;
 
   return (
     <View style={styles.container}>
@@ -18,7 +70,7 @@ export default function HomeScreen() {
         <Text style={styles.greeting}>Welcome back</Text>
         <Text style={styles.title}>Savings Dashboard</Text>
         <Text style={styles.subtitle}>
-          Stay on track and see how close you are to each goal.
+          Track your goals, monitor your budget, and stay on top of your progress.
         </Text>
 
         <View style={styles.headerButtons}>
@@ -50,8 +102,8 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.statCard}>
-          <Text style={styles.statLabel}>Target</Text>
-          <Text style={styles.statValue}>${totalTarget}</Text>
+          <Text style={styles.statLabel}>Completed</Text>
+          <Text style={styles.statValue}>{completedGoals}</Text>
         </View>
       </View>
 
@@ -62,13 +114,63 @@ export default function HomeScreen() {
           <Text style={styles.budgetText}>Expense: ${monthlyExpense}</Text>
         </View>
 
-        <View style={styles.netBadge}>
-          <Text style={styles.netBadgeLabel}>Net Saving</Text>
-          <Text style={styles.netBadgeValue}>${monthlySaving}</Text>
+        <View
+          style={[
+            styles.netBadge,
+            monthlySaving >= 0 ? styles.netPositive : styles.netNegative,
+          ]}
+        >
+          <Text
+            style={[
+              styles.netBadgeLabel,
+              monthlySaving >= 0 ? styles.netPositiveText : styles.netNegativeText,
+            ]}
+          >
+            Net Saving
+          </Text>
+          <Text
+            style={[
+              styles.netBadgeValue,
+              monthlySaving >= 0 ? styles.netPositiveText : styles.netNegativeText,
+            ]}
+          >
+            ${monthlySaving}
+          </Text>
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>Your Goals</Text>
+      <View style={styles.insightsRow}>
+        <View style={styles.insightCard}>
+          <Text style={styles.insightLabel}>Closest Goal</Text>
+          <Text style={styles.insightTitle}>
+            {closestGoal ? closestGoal.name : "No active goal"}
+          </Text>
+          <Text style={styles.insightText}>
+            {closestGoal?.estimatedMonths !== null && closestGoal
+              ? `${closestGoal.estimatedMonths} month(s) left`
+              : "Set your budget to estimate"}
+          </Text>
+        </View>
+
+        <View style={styles.insightCard}>
+          <Text style={styles.insightLabel}>Needs Attention</Text>
+          <Text style={styles.insightTitle}>
+            {atRiskGoal ? atRiskGoal.name : "All good"}
+          </Text>
+          <Text style={styles.insightText}>
+            {atRiskGoal?.estimatedMonths !== null && atRiskGoal
+              ? `${atRiskGoal.estimatedMonths} month(s) needed`
+              : "No delayed goal"}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Your Goals</Text>
+        <Text style={styles.sectionSubText}>
+          Total Target: ${totalTarget}
+        </Text>
+      </View>
 
       {goals.length === 0 ? (
         <View style={styles.emptyBox}>
@@ -199,7 +301,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 20,
     padding: 16,
-    marginBottom: 18,
+    marginBottom: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -216,27 +318,71 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   netBadge: {
-    backgroundColor: "#ecfdf5",
     borderRadius: 16,
     paddingVertical: 10,
     paddingHorizontal: 14,
     alignItems: "center",
+    minWidth: 110,
+  },
+  netPositive: {
+    backgroundColor: "#ecfdf5",
+  },
+  netNegative: {
+    backgroundColor: "#fef2f2",
   },
   netBadgeLabel: {
     fontSize: 12,
-    color: "#15803d",
     marginBottom: 4,
   },
   netBadgeValue: {
     fontSize: 18,
     fontWeight: "800",
+  },
+  netPositiveText: {
     color: "#16a34a",
+  },
+  netNegativeText: {
+    color: "#dc2626",
+  },
+  insightsRow: {
+    flexDirection: "row",
+    marginBottom: 18,
+    gap: 10,
+  },
+  insightCard: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 16,
+  },
+  insightLabel: {
+    fontSize: 12,
+    color: "#64748b",
+    marginBottom: 6,
+  },
+  insightTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#0f172a",
+    marginBottom: 6,
+  },
+  insightText: {
+    fontSize: 13,
+    color: "#475569",
+    lineHeight: 18,
+  },
+  sectionHeader: {
+    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "800",
     color: "#0f172a",
-    marginBottom: 12,
+  },
+  sectionSubText: {
+    fontSize: 13,
+    color: "#64748b",
+    marginTop: 2,
   },
   listContent: {
     paddingBottom: 24,

@@ -13,5 +13,6 @@ export type Goal = {
   deadline: string;
   note?: string;
   created_at: string;
+  lastCalculatedAt: string;
   transactions: Transaction[];
 };
